@@ -9,40 +9,40 @@ import (
 	"unicode"
 )
 
-type CsvParser struct {
-	path            string
-	file            *os.File
-	columnNumber    uint64
-	bufferSize      uint64
-	reader          *bufio.Reader
-	buffer          rune
-	stringBuilder   strings.Builder
-	stringBuffer    string
+type DiskParser struct {
+	path          string
+	file          *os.File
+	columnNumber  uint64
+	bufferSize    uint64
+	reader        *bufio.Reader
+	buffer        rune
+	stringBuilder strings.Builder
+	stringBuffer  string
 }
 
-func NewCsvParserWithBuffer(path string, bufferSize uint64) (*CsvParser, error) {
+func NewCsvParserWithBuffer(path string, bufferSize uint64) (*DiskParser, error) {
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
 
-	return &CsvParser{
+	return &DiskParser{
 		path:       path,
 		bufferSize: bufferSize,
 	}, nil
 }
 
-func NewCsvParser(path string) (*CsvParser, error) {
+func NewCsvParser(path string) (*DiskParser, error) {
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
 
-	return &CsvParser{
+	return &DiskParser{
 		path:       path,
 		bufferSize: 1024,
 	}, nil
 }
 
-func (p *CsvParser) Init() error {
+func (p *DiskParser) Init() error {
 	var err error
 	p.file, err = os.Open(p.path)
 	if err != nil {
@@ -52,7 +52,7 @@ func (p *CsvParser) Init() error {
 	return err
 }
 
-func (p *CsvParser) GetRowPart(row string) (map[string]string, bool, error) {
+func (p *DiskParser) GetRowPart(row string) (map[string]string, bool, error) {
 	buffer := make([]byte, p.bufferSize)
 	readBytes, err := p.reader.Read(buffer)
 	if err != nil {
@@ -72,11 +72,11 @@ func (p *CsvParser) GetRowPart(row string) (map[string]string, bool, error) {
 	return nil, false, nil
 }
 
-func (p *CsvParser) Close() error {
+func (p *DiskParser) Close() error {
 	return p.file.Close()
 }
 
-func (p *CsvParser) GetNextCell() (string, error) {
+func (p *DiskParser) GetNextCell() (string, error) {
 	var err error
 	for {
 		p.buffer, _, err = p.reader.ReadRune()
@@ -172,7 +172,7 @@ func ParseArgs(cell string) (string, string, string, string, rune) {
 	return firstRow.String(), firstColumn.String(), secondRow.String(), secondColumn.String(), operator
 }
 
-func (p *CsvParser) Calculate(firstRow string, firstColunm string, secondRow string, secondColunm string, operator rune) (string, error) {
+func (p *DiskParser) Calculate(firstRow string, firstColunm string, secondRow string, secondColunm string, operator rune) (string, error) {
 	firstStr, secondStr, err := p.GetCellsValue(firstRow, firstColunm, secondRow, secondColunm)
 	if err != nil {
 		return "", err
@@ -212,7 +212,7 @@ func (p *CsvParser) Calculate(firstRow string, firstColunm string, secondRow str
 	return "", errors.New("operator is not supported")
 }
 
-func (p *CsvParser) GetCellsValue(firstRow string, firstColunm string, secondRow string, secondColunm string) (string, string, error) {
+func (p *DiskParser) GetCellsValue(firstRow string, firstColunm string, secondRow string, secondColunm string) (string, string, error) {
 	file, err := os.Open(p.path)
 	if err != nil {
 		return "", "", err
